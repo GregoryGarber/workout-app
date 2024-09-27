@@ -5,7 +5,9 @@ provider:
   runtime: go1.x
   region: us-east-1
   environment:
-    DYNAMODB_TABLE: workout-app-users
+    DYNAMODB_WORKOUTS_TABLE: workouts
+    DYNAMODB_EXERCISES_TABLE: exercises
+    DYNAMODB_WORKOUT_EXERCISES_TABLE: workout_exercises
 
 functions:
   registerUser:
@@ -22,22 +24,57 @@ functions:
           path: login
           method: post
 
+  getWorkout:
+    handler: bin/getWorkout
+    events:
+      - http:
+          path: workout/{id}
+          method: get
+
 resources:
   Resources:
-    UsersTable:
+    WorkoutsTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: workout-app-users
+        TableName: workouts
         AttributeDefinitions:
-          - AttributeName: user_id
-            AttributeType: S
-          - AttributeName: first_name
-            AttributeType: S
-          - AttributeName: last_name
+          - AttributeName: workout_id
             AttributeType: S
         KeySchema:
-          - AttributeName: user_id
+          - AttributeName: workout_id
             KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+    ExercisesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: exercises
+        AttributeDefinitions:
+          - AttributeName: exercise_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: exercise_id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+    WorkoutExercisesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: workout_exercises
+        AttributeDefinitions:
+          - AttributeName: workout_id
+            AttributeType: S
+          - AttributeName: exercise_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: workout_id
+            KeyType: HASH
+          - AttributeName: exercise_id
+            KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
