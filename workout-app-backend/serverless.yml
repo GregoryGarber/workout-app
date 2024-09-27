@@ -5,7 +5,7 @@ provider:
   runtime: go1.x
   region: us-east-1
   environment:
-    DYNAMODB_USER_TABLE: workout-app-users
+    DYNAMODB_TABLE: workout-app-users
 
 functions:
   registerUser:
@@ -30,6 +30,10 @@ resources:
         TableName: workout-app-users
         AttributeDefinitions:
           - AttributeName: user_id
+            AttributeType: S
+          - AttributeName: first_name
+            AttributeType: S
+          - AttributeName: last_name
             AttributeType: S
         KeySchema:
           - AttributeName: user_id
