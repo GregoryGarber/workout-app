@@ -1,0 +1,39 @@
+service: workout-app-backend
+
+provider:
+  name: aws
+  runtime: go1.x
+  region: us-east-1
+  environment:
+    DYNAMODB_USER_TABLE: workout-app-users
+
+functions:
+  registerUser:
+    handler: bin/registerUser
+    events:
+      - http:
+          path: register
+          method: post
+
+  loginUser:
+    handler: bin/loginUser
+    events:
+      - http:
+          path: login
+          method: post
+
+resources:
+  Resources:
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: workout-app-users
+        AttributeDefinitions:
+          - AttributeName: user_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: user_id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
