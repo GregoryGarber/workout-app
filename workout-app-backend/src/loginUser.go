@@ -37,7 +37,7 @@ func loginUser(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 
 	// Build the scan input parameters
 	params := &dynamodb.ScanInput{
-		TableName:                 aws.String(os.Getenv("DYNAMODB_TABLE")),
+		TableName:                 aws.String(os.Getenv("DYNAMODB_WORKOUT_USERS_TABLE")),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		FilterExpression:          expr.Filter(),

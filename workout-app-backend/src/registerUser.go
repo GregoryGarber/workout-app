@@ -36,7 +36,7 @@ func registerUser(request events.APIGatewayProxyRequest) (events.APIGatewayProxy
 
 	input := &dynamodb.PutItemInput{
 		Item:      av,
-		TableName: aws.String(os.Getenv("DYNAMODB_TABLE")),
+		TableName: aws.String(os.Getenv("DYNAMODB_WORKOUT_USERS_TABLE")),
 	}
 
 	_, err = common.DB.PutItem(input)

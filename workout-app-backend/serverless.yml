@@ -78,3 +78,21 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: workout_users
+        AttributeDefinitions:
+          - AttributeName: user_id
+            AttributeType: S
+          - AttributeName: first_name
+            AttributeType: S
+          - AttributeName: last_name
+            AttributeType: S
+        KeySchema:
+          - AttributeName: user_id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
