@@ -1,0 +1,57 @@
+service: workout-app-backend
+
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  environment:
+    WORKOUT_TABLE: ${env:WORKOUT_TABLE}
+    EXERCISE_TABLE: ${env:EXERCISE_TABLE}
+    WORKOUT_EXERCISE_TABLE: ${env:WORKOUT_EXERCISE_TABLE}
+  iam:
+    role:
+      statements:
+        - Effect: "Allow"
+          Action:
+            - "dynamodb:GetItem"
+            - "dynamodb:Query"
+            - "dynamodb:Scan"
+            - "dynamodb:PutItem"
+            - "dynamodb:UpdateItem"
+            - "dynamodb:DeleteItem"
+          Resource:
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.WORKOUT_TABLE}"
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.EXERCISE_TABLE}"
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.WORKOUT_EXERCISE_TABLE}"
+
+functions:
+  getWorkoutAndExercises:
+    handler: src/getWorkout.getWorkoutAndExercises
+    events:
+      - http:
+          path: workout/{workoutId}
+          method: get
+          cors: true
+
+plugins:
+  - serverless-dotenv-plugin
+
+package:
+  individually: true
+
+custom:
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    exclude: ['aws-sdk']
+    target: 'node18'
+    define:
+      'require.resolve': undefined
+    platform: 'node'
+    concurrency: 10
+  scripts:
+    hooks:
+      'before:package:createDeploymentArtifacts': npm run test
