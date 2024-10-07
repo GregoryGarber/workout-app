@@ -78,13 +78,13 @@ const getWorkoutExerciseCombination = async (
 
     // Map the returned items to the Workout type
     return Items.map((item) => {
-        return new WorkoutExercise({
-          workout_id: item.workout_id.S, // Extract the string
-          exercise_id: item.exercise_id.S, // Extract the string
-          reps: Number(item.reps.N), // Convert string to number
-          sets: Number(item.sets.N), // Convert string to number
-        });
+      return new WorkoutExercise({
+        workout_id: item.workout_id.S, // Extract the string
+        exercise_id: item.exercise_id.S, // Extract the string
+        reps: Number(item.reps.N), // Convert string to number
+        sets: Number(item.sets.N), // Convert string to number
       });
+    });
   } catch (error) {
     console.error(error);
     if (error instanceof ZodError) {
@@ -105,8 +105,13 @@ export const getWorkoutAndExercises: APIGatewayProxyHandler = async (event) => {
   const workoutExercises = await getWorkoutExerciseCombination(workoutId);
   const exercises = await Promise.all(
     workoutExercises.map(async (workoutExercise) => {
-      const ex =  await getExercise(workoutExercise.exerciseId);
-      return { name: ex.name, description: ex.description, reps: workoutExercise.reps, sets: workoutExercise.sets };
+      const ex = await getExercise(workoutExercise.exerciseId);
+      return {
+        name: ex.name,
+        description: ex.description,
+        reps: workoutExercise.reps,
+        sets: workoutExercise.sets,
+      };
     }),
   );
   const completeWorkout = {

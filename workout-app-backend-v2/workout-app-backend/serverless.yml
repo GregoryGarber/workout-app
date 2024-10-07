@@ -10,6 +10,7 @@ provider:
     WORKOUT_TABLE: ${env:WORKOUT_TABLE}
     EXERCISE_TABLE: ${env:EXERCISE_TABLE}
     WORKOUT_EXERCISE_TABLE: ${env:WORKOUT_EXERCISE_TABLE}
+    USER_TABLE: ${env:USER_TABLE}
   iam:
     role:
       statements:
@@ -25,6 +26,8 @@ provider:
             - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.WORKOUT_TABLE}"
             - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.EXERCISE_TABLE}"
             - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.WORKOUT_EXERCISE_TABLE}"
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.USER_TABLE}"
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.USER_TABLE}/index/*" # Ensure access to all indexes on the USER_TABLE
 
 functions:
   getWorkoutAndExercises:
@@ -33,6 +36,14 @@ functions:
       - http:
           path: workout/{workoutId}
           method: get
+          cors: true
+
+  signUp:
+    handler: src/userAccess.signUp
+    events:
+      - http:
+          path: user/signup
+          method: post
           cors: true
 
 plugins:
