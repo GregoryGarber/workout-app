@@ -5,6 +5,8 @@ import { Workout } from './data_types/Workout';
 import { Exercise } from './data_types/Exercise';
 import { WorkoutExercise } from './data_types/WorkoutExercise';
 import { ZodError } from 'zod';
+import { CommonResponse } from './data_types/common';
+
 require('dotenv').config();
 
 const client = new DynamoDBClient({});
@@ -96,7 +98,9 @@ const getWorkoutExerciseCombination = async (
   }
 };
 
-export const getWorkoutAndExercises: APIGatewayProxyHandler = async (event) => {
+export const getWorkoutAndExercises: APIGatewayProxyHandler = async (
+  event,
+): Promise<CommonResponse> => {
   const workoutId = event.pathParameters?.workoutId;
   if (!workoutId) {
     throw new Error('Missing workoutId');

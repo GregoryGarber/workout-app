@@ -3,6 +3,7 @@ import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from './data_types/User';
+import { CommonResponse } from './data_types/common';
 
 require('dotenv').config();
 
@@ -13,7 +14,7 @@ const USER_TABLE = process.env.USER_TABLE!;
 const userExists = async (
   firstName: string,
   lastName: string,
-): Promise<boolean> => {
+): Promise<User | null> => {
   const params = {
     TableName: USER_TABLE,
     IndexName: 'firstName-lastName-index', // Name of your GSI
@@ -26,15 +27,31 @@ const userExists = async (
 
   try {
     const result = await docClient.send(new QueryCommand(params));
-    return result.Items !== undefined && result.Items.length > 0;
+    if (result.Items && result.Items.length > 0) {
+      const item = result.Items[0];
+      const userData = {
+        user_id: item.user_id.S,
+        firstName: item.firstName.S,
+        lastName: item.lastName.S,
+      };
+
+      // Validate and create a User instance
+      const user = new User(userData);
+      return user;
+    }
+    return null;
   } catch (error) {
     console.error('Error checking if user exists:', error);
     throw new Error('Error checking if user exists');
   }
 };
 
-const addUser = async (firstName: string, lastName: string) => {
-  if (await userExists(firstName, lastName)) {
+const addUser = async (
+  firstName: string,
+  lastName: string,
+): Promise<CommonResponse> => {
+  const existingUser = await userExists(firstName, lastName);
+  if (existingUser) {
     return {
       statusCode: 400,
       body: JSON.stringify({
@@ -76,7 +93,9 @@ const addUser = async (firstName: string, lastName: string) => {
   }
 };
 
-export const signUp: APIGatewayProxyHandler = async (event) => {
+export const signUp: APIGatewayProxyHandler = async (
+  event,
+): Promise<CommonResponse> => {
   const requestBody = JSON.parse(event.body || '{}');
   const firstName = requestBody.firstName;
   const lastName = requestBody.lastName;
@@ -84,9 +103,50 @@ export const signUp: APIGatewayProxyHandler = async (event) => {
     return {
       statusCode: 400,
       body: JSON.stringify({
-        error: 'Missing required parameters. firstname = ' + firstName + ' lastname = ' + lastName,
+        error:
+          'Missing required parameters. firstname = ' +
+          firstName +
+          ' lastname = ' +
+          lastName,
       }),
     };
   }
   return addUser(firstName, lastName);
+};
+
+export const signIn: APIGatewayProxyHandler = async (
+  event,
+): Promise<CommonResponse> => {
+  const requestBody = JSON.parse(event.body || '{}');
+  const firstName = requestBody.firstName;
+  const lastName = requestBody.lastName;
+  if (!firstName || !lastName) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({
+        error:
+          'Missing required parameters. firstname = ' +
+          firstName +
+          ' lastname = ' +
+          lastName,
+      }),
+    };
+  }
+  const user = await userExists(firstName, lastName);
+  if (user) {
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: 'User found',
+        userId: user.user_id,
+      }),
+    };
+  } else {
+    return {
+      statusCode: 404,
+      body: JSON.stringify({
+        error: 'User not found',
+      }),
+    };
+  }
 };
