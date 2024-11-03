@@ -11,6 +11,8 @@ provider:
     EXERCISE_TABLE: ${env:EXERCISE_TABLE}
     WORKOUT_EXERCISE_TABLE: ${env:WORKOUT_EXERCISE_TABLE}
     USER_TABLE: ${env:USER_TABLE}
+    USER_WORKOUT_TABLE: ${env:USER_WORKOUT_TABLE}
+    USER_WORKOUT_LOG_TABLE: ${env:USER_WORKOUT_LOG_TABLE}
   iam:
     role:
       statements:
@@ -22,13 +24,16 @@ provider:
             - "dynamodb:PutItem"
             - "dynamodb:UpdateItem"
             - "dynamodb:DeleteItem"
+            - "dynamodb:BatchWriteItem"
           Resource:
             - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.WORKOUT_TABLE}"
             - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.EXERCISE_TABLE}"
             - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.WORKOUT_EXERCISE_TABLE}"
             - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.USER_TABLE}"
             - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.USER_TABLE}/index/*" # Ensure access to all indexes on the USER_TABLE
-
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.USER_WORKOUT_TABLE}"
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.USER_WORKOUT_TABLE}/index/workout_id-user_id-index"
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.USER_WORKOUT_LOG_TABLE}"
 functions:
   getWorkoutAndExercises:
     handler: src/getWorkout.getWorkoutAndExercises
@@ -54,11 +59,50 @@ functions:
           method: post
           cors: true
 
+  getLatestWorkoutLog:
+    handler: src/userLogs.getLatestWorkoutLog
+    events:
+      - http:
+          path: userLogs/getLatestWorkoutLog
+          method: get
+          cors: true 
+
+  getAllWorkoutLogs:
+    handler: src/userLogs.getAllWorkoutLogs
+    events:
+      - http:
+          path: userLogs/getAllWorkoutLogs
+          method: get
+          cors: true
+
+  createUserWorkout:
+    handler: src/userLogs.createUserWorkout
+    events:
+      - http:
+          path: userLogs/createUserWorkout
+          method: post
+          cors: true
+
+  createUserLog:
+    handler: src/userLogs.createUserLog
+    events:
+      - http:
+          path: userLogs/createUserLog
+          method: post
+          cors: true
+
 plugins:
   - serverless-dotenv-plugin
 
 package:
   individually: true
+  exclude:
+    - node_modules/**
+    - test/**
+    - docs/**
+    - .git/**
+    - .vscode/**
+
 
 custom:
   esbuild:

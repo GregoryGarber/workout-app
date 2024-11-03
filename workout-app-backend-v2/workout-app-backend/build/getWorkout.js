@@ -22,26 +22,40 @@ async function fetchItem(tableName, key) {
 }
 // Function to get a workout
 const getWorkout = async (workoutId) => {
-    const item = await fetchItem(WORKOUT_TABLE, { workoutId });
-    if (!item) {
-        throw new Error('Workout not found');
+    try {
+        const item = await fetchItem(WORKOUT_TABLE, {
+            workout_id: workoutId,
+        });
+        if (!item) {
+            throw new Error('Workout not found');
+        }
+        return item;
     }
-    return item;
+    catch (error) {
+        throw Error('Fetching workout failed' + error);
+    }
 };
 // Function to get an exercise
 const getExercise = async (exerciseId) => {
-    const item = await fetchItem(EXERCISE_TABLE, { exerciseId });
-    if (!item) {
-        throw new Error('Exercise not found');
+    try {
+        const item = await fetchItem(EXERCISE_TABLE, {
+            exercise_id: exerciseId,
+        });
+        if (!item) {
+            throw new Error('Exercise not found');
+        }
+        return item;
     }
-    return item;
+    catch (error) {
+        throw Error('Fetching exercise failed ' + error);
+    }
 };
 const getWorkoutExerciseCombination = async (workoutId) => {
     const params = {
         TableName: WORKOUT_EXERCISE_TABLE,
-        KeyConditionExpression: 'workoutId = :workoutId',
+        KeyConditionExpression: 'workout_id = :workout_id',
         ExpressionAttributeValues: {
-            ':workoutId': { S: workoutId }, // Wrap the string in an object with S key
+            ':workout_id': { S: workoutId }, // Wrap the string in an object with S key
         },
     };
     try {
@@ -51,7 +65,14 @@ const getWorkoutExerciseCombination = async (workoutId) => {
             throw new Error('Workout not found');
         }
         // Map the returned items to the Workout type
-        return Items.map((item) => new WorkoutExercise_1.WorkoutExercise(item)); // Adjust as necessary based on how Workout is constructed
+        return Items.map((item) => {
+            return new WorkoutExercise_1.WorkoutExercise({
+                workout_id: item.workout_id.S, // Extract the string
+                exercise_id: item.exercise_id.S, // Extract the string
+                reps: Number(item.reps.N), // Convert string to number
+                sets: Number(item.sets.N), // Convert string to number
+            });
+        });
     }
     catch (error) {
         console.error(error);
@@ -69,7 +90,13 @@ const getWorkoutAndExercises = async (event) => {
     const workout = await getWorkout(workoutId);
     const workoutExercises = await getWorkoutExerciseCombination(workoutId);
     const exercises = await Promise.all(workoutExercises.map(async (workoutExercise) => {
-        return await getExercise(workoutExercise.exerciseId);
+        const ex = await getExercise(workoutExercise.exerciseId);
+        return {
+            name: ex.name,
+            description: ex.description,
+            reps: workoutExercise.reps,
+            sets: workoutExercise.sets,
+        };
     }));
     const completeWorkout = {
         workout: workout,
